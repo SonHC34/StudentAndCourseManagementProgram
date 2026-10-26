@@ -11,6 +11,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import model.Student;
 import tools.ConsoleInputter;
@@ -52,14 +54,14 @@ public class StudentList {
     */
     public void print() {
         System.out.println("----- LIST ALL STUDENTS  -----\n");
-        System.out.printf(" %-8s| %-26s| %-25s| %4s\n"
-                + "-----------------------------------------------------------------------", 
+        System.out.printf(" %-8s| %-25s| %-25s| %4s|\n"
+                + "----------------------------------------------------------------------\n", 
                 "ID", "Name", "Major", "GPA");
         for (Student anStudent : studentList) {
             System.out.println(anStudent);
         }
         
-        System.out.println("-----------------------------------------------------------------------");
+        System.out.println("----------------------------------------------------------------------");
     } // Print all students method
     
     /*
@@ -84,7 +86,7 @@ public class StudentList {
         String id = ConsoleInputter.getString("Student ID[STUxxxx]", ID_PAT, "The student id must follow the format.");
         String name = ConsoleInputter.getString("Student name[2~25 characters]", NAME_PAT, "The student name must be from 2 to 25 characters.");
         printMajors();
-        int index = ConsoleInputter.getInt("Select major[1-" + majors.length + "]", 1, majors.length);
+        int index = ConsoleInputter.getInt("Select major", 1, majors.length);
         String major = getMajor(index);
         double gpa = ConsoleInputter.getDouble("Gpa", 0.0, 4.0);
         
@@ -92,6 +94,7 @@ public class StudentList {
         boolean response = ConsoleInputter.getBoolean("Add the course?");
         if (response == true) {
             Student anStudent = new Student(id, name, major, gpa);
+            studentList.add(anStudent);
             System.out.println("Add a new student successfully!");
         } else {
             System.out.println("Cancelled process");
@@ -121,11 +124,11 @@ public class StudentList {
         
         String id = ConsoleInputter.getString("Student ID[STUxxxx]", ID_PAT, "The student ID must follow the format.");
         if (isStudentExist(id)) {
-            System.out.printf(" %-8s| %-26s| %-25s| %4s\n"
+            System.out.printf(" %-8s| %-25s| %-25s| %4s|\n"
                     + "-----------------------------------------------------------------------",
                     "ID", "Name", "Major", "GPA");
             System.out.println(getExistingStudent(id));
-            System.out.println("-----------------------------------------------------------------------");
+            System.out.println("----------------------------------------------------------------------");
         } else {
             System.out.println("The student ID does NOT exist");
         }
@@ -170,11 +173,47 @@ public class StudentList {
     Algorithm:
     Begin
         Print function header
-        ...
+        Print majors
+        Create temporary variable to get major option from user
+        Get the validate major input
+        Create a empty list
+        For each student {
+            If the student matches the major, then add it to the list
+        }
+        If the filtered list is empty {
+            Display notification on the screen
+        } else {
+            Print table header
+            For each a student in the filtered list, print the student details
+            Print table footer
+        }
     End
     */
     public void printByMajor() {
+        System.out.println("-----  LIST ALL STUDENTS BY MAJOR  -----");
         
+        printMajors();
+        int index = ConsoleInputter.getInt("Select major", 1, majors.length);
+        String major = getMajor(index);
+        List<Student> filteredStudents = new ArrayList<>();
+        
+        for (Student anStudent : studentList) {
+            if (anStudent.getMajor().equals(major)) {
+                filteredStudents.add(anStudent);
+            }
+        }
+        
+        if (filteredStudents.isEmpty()) {
+            System.out.println("The list is empty");
+        } else {
+            System.out.printf(" %-8s| %-25s| %-25s| %4s|\n"
+                    + "-----------------------------------------------------------------------\n",
+                    "ID", "Name", "Major", "GPA");
+            for (Student student : filteredStudents) {
+                System.out.println(student);
+            }
+            System.out.println("-----------------------------------------------------------------------");
+        }
     } // Print all students by major method
     
     /*
@@ -200,8 +239,7 @@ public class StudentList {
             studentList.remove(getExistingStudent(id));
         } else {
             System.out.println("The student ID does NOT exist");
-        }
-        
+        }  
     } // Remove a student by ID method
     
     /*
@@ -211,11 +249,40 @@ public class StudentList {
     
     Algorithm:
     Begin
-        ...
+        Print function header
+        Create a new list with construct from the main list
+        Define a comparator to compare students based on their GPA
+        Sort the new list in ascending order using the comparator
+        If the sorted list is empty {\
+            Display notification on the screen
+        } else {
+            Print table header
+            For each student, print the student details
+            Print table footer
+        }
     End
     */
     public void sortByGpa() {
+        System.out.println("----- SORT STUDENTS BY GPA  -----");
         
+        List<Student> sortedList = new ArrayList<>(studentList);
+        
+        Comparator<Student> sort = (Student s1, Student s2) -> {
+            return Double.compare(s1.getGpa(), s2.getGpa());
+        };     
+        Collections.sort(sortedList, sort);
+        
+        if (sortedList.isEmpty()) {
+            System.out.println("The list is empty");
+        } else {
+            System.out.printf(" %-8s| %-25s| %-25s| %4s|\n"
+                    + "----------------------------------------------------------------------\n",
+                    "ID", "Name", "Major", "GPA");
+            for (Student student : sortedList) {
+                System.out.println(student);
+            }
+            System.out.println("----------------------------------------------------------------------");
+        }
     } // Sort students by GPA method
     
     /*
@@ -236,7 +303,7 @@ public class StudentList {
                 anStudent.getFullName(),
                 anStudent.getMajor(),
                 gpa);
-    }
+    } // Covert an student fields to a string method
     
     /*
     Description: Covert a line into a Student object
@@ -269,7 +336,7 @@ public class StudentList {
         } catch (NumberFormatException e) {
             return null;
         }
-    } // conver line to a course method
+    } // conver an line to a course method
     
     /*
     Description: Read Course data from file
@@ -297,9 +364,10 @@ public class StudentList {
         try (BufferedReader reader = new BufferedReader(new FileReader(f))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                Student anStudent = linetoStudent(line);
-                studentList.add(anStudent);
+                Student student = linetoStudent(line);
+                studentList.add(student);
             }
+            System.out.println("Reading all data from " + filePath + " successfully.");
         } catch (IOException e) {
             System.out.println("Error reading file from " + filePath + ": " + e.getMessage());
         }
@@ -346,7 +414,7 @@ public class StudentList {
     Begin
         If parameter is null, or empty, then return null
     
-        Create a temporary student object
+        Create a temporary student object with null variable
         for each student in the list {
             If the student's id matches the parameter
             Get the student
@@ -361,9 +429,9 @@ public class StudentList {
         }
         Student foundStudent = null;
         
-        for (Student anStudent : studentList) {
-            if (anStudent.getId().equals(studentId)) {
-                foundStudent = anStudent;
+        for (Student student : studentList) {
+            if (student.getId().equals(studentId)) {
+                foundStudent = student;
                 break;
             }
         }
@@ -372,7 +440,7 @@ public class StudentList {
     } // Get existing student method
     
     /*
-    Description: 
+    Description: Check whether a student exists in the list
     Input: String studentId
     Output: Return true if student's id contains in the list, false otherwise
     
@@ -427,6 +495,6 @@ public class StudentList {
             return null;
         }
         
-        return majors[index];
+        return majors[index - 1];
     } // Get major method
 }

@@ -59,7 +59,7 @@ public class Student {
     // methods
     @Override
     public String toString() {
-        return String.format(" %-8s| %-26s| %-25s| %4.2f",
+        return String.format(" %-8s| %-25s| %-25s| %4.2f|",
                 id, fullName, major, gpa);
     }
     
