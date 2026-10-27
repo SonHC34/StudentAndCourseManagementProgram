@@ -125,7 +125,7 @@ public class StudentList {
         String id = ConsoleInputter.getString("Student ID[STUxxxx]", ID_PAT, "The student ID must follow the format.");
         if (isStudentExist(id)) {
             System.out.printf(" %-8s| %-25s| %-25s| %4s|\n"
-                    + "-----------------------------------------------------------------------",
+                    + "----------------------------------------------------------------------\n",
                     "ID", "Name", "Major", "GPA");
             System.out.println(getExistingStudent(id));
             System.out.println("----------------------------------------------------------------------");
@@ -497,4 +497,12 @@ public class StudentList {
         
         return majors[index - 1];
     } // Get major method
+    
+    public boolean isEmpty() {
+        return studentList.isEmpty();
+    }
+    
+    public List<Student> getAll() {
+        return Collections.unmodifiableList(studentList);
+    }
 }
