@@ -25,10 +25,8 @@ public class StudentList {
     // FIELDS
     List<Student> studentList = new ArrayList<>();
     final String ID_PAT = "^STU\\d{4}$";
-    final String NAME_PAT = "^[A-Za-z]{2,25}$";
+    final String NAME_PAT = "^[A-Za-z\\s]{2,25}$";
     final String[] majors = {
-        "Software Engineering",
-        "Information Systems",
         "Software Engineering",
         "Information Systems",
         "Computer Science",
@@ -72,7 +70,8 @@ public class StudentList {
     Algorithm:
     Begin
         Print function header
-        Input id, name
+        Loop until input a unique id
+        Input name
         Print majors
         Input major, gpa
         Ask user's decision before add
@@ -83,7 +82,15 @@ public class StudentList {
     public void add() {
         System.out.println("----- ADD A NEW STUDENT  -----");
         
-        String id = ConsoleInputter.getString("Student ID[STUxxxx]", ID_PAT, "The student id must follow the format.");
+        String id = null;
+        while (true) {
+            id = ConsoleInputter.getString("Student ID[STUxxxx]", ID_PAT, "The student id must follow the format.");
+            if (isStudentExist(id)) {
+                System.out.println("The id is already exist.");
+            } else {
+                break;
+            }
+        }
         String name = ConsoleInputter.getString("Student name[2~25 characters]", NAME_PAT, "The student name must be from 2 to 25 characters.");
         printMajors();
         int index = ConsoleInputter.getInt("Select major", 1, majors.length);
@@ -91,7 +98,7 @@ public class StudentList {
         double gpa = ConsoleInputter.getDouble("Gpa", 0.0, 4.0);
         
         // ask user decision
-        boolean response = ConsoleInputter.getBoolean("Add the course?");
+        boolean response = ConsoleInputter.getBoolean("Add the student?");
         if (response == true) {
             Student anStudent = new Student(id, name, major, gpa);
             studentList.add(anStudent);
@@ -130,7 +137,7 @@ public class StudentList {
             System.out.println(getExistingStudent(id));
             System.out.println("----------------------------------------------------------------------");
         } else {
-            System.out.println("The student ID does NOT exist");
+            System.out.println("The student ID does not exist!");
         }
     } // Search for a student by ID method
     
@@ -160,7 +167,7 @@ public class StudentList {
             double gpa = ConsoleInputter.getDouble("GPA", 0.0, 4.0);
             anStudent.setGpa(gpa);
         } else {
-            System.out.println("The student ID does NOT exist");
+            System.out.println("The student ID does not exist!");
         }
         
     } // Update a student by ID method
@@ -231,14 +238,19 @@ public class StudentList {
         }
     End
     */
-    public void removeById() { 
+    public void removeById(CourseList courseList) { 
         System.out.println("----- REMOVE A STUDENT BY ID  -----");
         
         String id = ConsoleInputter.getString("Student ID[STUxxxx]", ID_PAT, "The student ID must follow the format.");
         if (isStudentExist(id)) {
-            studentList.remove(getExistingStudent(id));
+            if (courseList.hasStudent(id)) {
+                studentList.remove(getExistingStudent(id));
+                System.out.println("Remove successfully");
+            } else {
+                System.out.println("Cannot delete: The student is assigned to courses.");
+            }
         } else {
-            System.out.println("The student ID does NOT exist");
+            System.out.println("The student ID does not exist!");
         }  
     } // Remove a student by ID method
     
@@ -345,27 +357,34 @@ public class StudentList {
     
     Algorithm:
     Begin
-        Create a File object using filePath 
-        If the file does not exist, return
-        try (Initialize BufferedReader with FileReader) {
-            Declare a String variable
+        Try (Initialize BufferedReader with FileReader using filePath) {
+            Declare a String variable for reading lines
             While reading each line until end of file (line != null):
                 Convert line to a Student object using linetoStudent()
-                Add the Student object to courseList
+                If the student is null:
+                    Display warning for invalid or missing data
+                Else if the student ID already exists:
+                    Display warning for duplicate Student ID
+                Else:
+                    Add the Student object to studentList
+            Display success notification on screen
         } catch (IOException e) {
             Display error notification on screen
         }
     End
     */
     public void readFromFile(String filePath) {      
-        File f = new File(filePath);
-        if (!f.exists()) return ;
-        
-        try (BufferedReader reader = new BufferedReader(new FileReader(f))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 Student student = linetoStudent(line);
-                studentList.add(student);
+                if (student == null) {
+                    System.out.println("Warning: Invalid or missing data skipped -> " + line);
+                } else if (isStudentExist(student.getId())) {
+                    System.out.println("Warning: Duplicate Student ID skipped -> " + line);
+                } else {
+                    studentList.add(student);
+                }
             }
             System.out.println("Reading all data from " + filePath + " successfully.");
         } catch (IOException e) {
@@ -447,7 +466,7 @@ public class StudentList {
     Algorithm:
     Begin
         If parameter is null, or empty, then return false
-        Return true if student's id contains in the list, false otherwise
+        Return true if student's id is not null, false otherwise
     End
     */
     public boolean isStudentExist(String studentId) {
@@ -455,7 +474,7 @@ public class StudentList {
             return false;
         }
         
-        return studentList.contains(getExistingStudent(studentId));
+        return getExistingStudent(studentId) != null;
     }
     
     /*
@@ -472,7 +491,7 @@ public class StudentList {
     End
     */
     public void printMajors() {
-        System.out.println("----- MAJOR LIST  -----");
+        System.out.println("MAJOR LIST: ");
         
         for (int i = 0; i < majors.length; i++) {
             System.out.println((i+1) + ". " + majors[i]);
@@ -491,7 +510,7 @@ public class StudentList {
     End
     */
     public String getMajor(int index) {
-        if (index < 0 && index >= majors.length) {
+        if (index < 0 || index > majors.length) {
             return null;
         }
         

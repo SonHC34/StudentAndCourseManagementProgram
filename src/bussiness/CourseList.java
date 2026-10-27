@@ -25,14 +25,14 @@ public class CourseList {
     // FIELDSS
     List<Course> courseList = new ArrayList<>();
     final String DATE_PAT = "dd/MM/yyyy";
+    final String COURSENAME_PAT = ".+";
     
-    // METHODS
-    public void print() {
+    // METHODS 
+    public void printall() {
         for (Course c : courseList) {
             System.out.println(c);
         }
     }
-    
     /*
     Description: Add a new course to the list
     Input: StudentList studentList
@@ -52,23 +52,31 @@ public class CourseList {
         System.out.println("-----  ADD NEW COURSE  -----");
         
         // input course id, student id, course name, duration week, and start date
-        String courseId = ConsoleInputter.getStr("Course ID");
+        String courseId;
+        while (true) {
+            courseId = ConsoleInputter.getStr("Course ID");
+            if (findById(courseId) == null) {
+                break;
+            } else {
+                System.out.println("The course ID is already exist.");
+            }
+        }
         String studentId = null;
         while (true) {
             studentId = ConsoleInputter.getStr("Student ID");
             if (studentList.isStudentExist(studentId)) 
                 break;
         }
-        String courseName = ConsoleInputter.getStr("Course name");
-        int durationWeeks = ConsoleInputter.getInt("Duration weeks[1-10]", 1, 10);
+        String courseName = ConsoleInputter.getString("Course name",COURSENAME_PAT, "Course name cannot be empty!");
+        int durationWeeks = ConsoleInputter.getInt("Duration weeks", 1, 10);
         
-        boolean isFutureToday = true;
+        boolean isFutureToday = false;
         Date startDate;
         do {
-            startDate = ConsoleInputter.getDate("Registration date(MM/dd/yyyy)", DATE_PAT);
+            startDate = ConsoleInputter.getDate("Start date(dd/MM/yyyy)", DATE_PAT);
             isFutureToday = startDate.after(new Date());  // kiem tra thoi gian co o hien tai hay tuong lai ko
-            if (isFutureToday == true) System.out.println("Registration date cannot be in the future!");
-        } while (isFutureToday == true);
+            if (isFutureToday == false) System.out.println("Start date must be in an future date!");
+        } while (isFutureToday == false);
         
         // ask user decision
         boolean response = ConsoleInputter.getBoolean("Add the course?");
@@ -190,11 +198,12 @@ public class CourseList {
     
     Algorithm:
     Begin
-        Split line by regex ",\\s*", into a String array
+        Split line by regex "\\s*,\\s*" into a String array
         If array length is not equal to 5, return null
         try {
             Covert elements to suitable data types according to Course model
-            If startDate field is null, then return null
+            If startDate field is null, duration is less than 1, or any string is empty:
+                return null
             Return the Course object using constructor
         } catch (NumberFormatException e) {
             return null
@@ -225,32 +234,41 @@ public class CourseList {
     
     /*
     Description: Read Course data from file
-    Input: String filePath
+    Input: String filePath, StudentList studentList
     Output: None (Updates courseList directly)
     
     Algorithm:
     Begin
-        Create a File object using filePath 
-        If the file does not exist, return
-        try (Initialize BufferedReader with FileReader) {
-            Declare a String variable
+        Try (Initialize BufferedReader with FileReader using filePath) {
+            Declare a String variable for reading lines
             While reading each line until end of file (line != null):
                 Convert line to a Course object using linetoCourse()
-                Add the Course object to courseList
+                If the course is null:
+                    Display warning for invalid or missing data
+                Else if the course ID already exists:
+                    Display warning for duplicate Course ID
+                Else if the student ID does not exist in student list:
+                    Display warning for non-existent Student ID
+                Else:
+                    Add the Course object to courseList
+            Display success notification on screen
         } catch (IOException e) {
             Display error notification on screen
         }
     End
     */
-    public void readFromFile(String filePath) {      
-        File f = new File(filePath);
-        if (!f.exists()) return ;
-        
-        try (BufferedReader reader = new BufferedReader(new FileReader(f))) {
+    public void readFromFile(String filePath, StudentList studentList) {      
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 Course anCourse = linetoCourse(line);
-                if (anCourse != null && findById(anCourse.getCourseId()) == null) {
+                if (anCourse == null) {
+                    System.out.println("Warning: Invalid or missing data skipped -> " + line);
+                } else if (findById(anCourse.getCourseId()) != null) {
+                    System.out.println("Warning: Duplicate Course ID skipped -> " + line);
+                } else if (!studentList.isStudentExist(anCourse.getStudentId())) {
+                    System.out.println("Warning: Non-existent Student ID skipped -> " + line);
+                } else {
                     courseList.add(anCourse);
                 }
             }
@@ -299,5 +317,16 @@ public class CourseList {
             }
         }
         return null;
+    }
+    
+    public boolean hasStudent(String id) {
+        boolean has = false;
+        for (Course course : courseList) {
+            if (course.getStudentId().equals(id)) {
+                has = true;
+                break;
+            }
+        }
+        return has;
     }
 }

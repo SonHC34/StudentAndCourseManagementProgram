@@ -22,12 +22,12 @@ public class StudentAndCourseMangement {
         final String courseFile = "data/Courses.txt";
         final String studentFile = "data/Students.txt";
         
-        // INITIALIZE LISTS AND LOAD DATA FROM FILE
-        CourseList courses = new CourseList();
-        courses.readFromFile(courseFile);
+        // INITIALIZE LISTS AND LOAD DATA FROM FILES
         StudentList students = new StudentList();
-        students.readFromFile(studentFile);
-        
+        students.readFromFile(studentFile);      
+        CourseList courses = new CourseList();
+        courses.readFromFile(courseFile, students);
+        courses.printall();
         boolean studentsChanged = false;
         boolean coursesChanged = false;
         
@@ -48,7 +48,7 @@ public class StudentAndCourseMangement {
             "Quit program"
         };
         
-        String title = "----- CAR INSURANCE MANAGEMENT -----";
+        String title = "----- STUDENTS AND SHORT COURSES MANAGEMENT -----";
         do {
             System.out.println(title);
             choice = ConsoleInputter.intMenu(menuOptions);
@@ -99,7 +99,7 @@ public class StudentAndCourseMangement {
                 }
                 case 9: {
                     // Remove a student by ID
-                    students.removeById();
+                    students.removeById(courses);
                     studentsChanged = true;
                     break;
                 }
@@ -112,8 +112,10 @@ public class StudentAndCourseMangement {
                     // Save data to files
                     if (studentsChanged || coursesChanged) {
                         students.writeToFile(studentFile);
+                        studentsChanged = false;
                         System.out.println("Writing student data to " + studentFile + " successfully.");
                         courses.writeToFile(courseFile);
+                        coursesChanged = false;
                         System.out.println("Writing course data to " + courseFile + " successfully.");
                     } else {
                         System.out.println("There is not change in program");
